@@ -1,22 +1,29 @@
 {
   "name": "grf-templates",
   "version": "1.0.0",
+  "type": "module",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start:dev": "nodemon"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "start:dev": "tsx src/index.ts",
+    "dev": "tsx src/index.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.18.3",
   "devDependencies": {
-    "@types/node": "^24.7.2",
     "eslint": "^9.37.0",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
+    "tsx": "^4.7.0",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@grafana/grafana-foundation-sdk": "11.6.0-cogv0.0.x.1753977659"
   }
 }

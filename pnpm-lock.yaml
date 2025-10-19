@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@grafana/grafana-foundation-sdk':
+        specifier: 11.6.0-cogv0.0.x.1753977659
+        version: 11.6.0-cogv0.0.x.1753977659
     devDependencies:
       '@types/node':
         specifier: ^24.7.2
@@ -70,6 +74,9 @@ packages:
   '@eslint/plugin-kit@0.4.0':
     resolution: {integrity: sha512-sB5uyeq+dwCWyPi31B2gQlVlo+j5brPlWx4yZBrEaRo/nhdDE8Xke1gsGgtiBdaBTxuTkceLVuVt/pclrasb0A==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@grafana/grafana-foundation-sdk@11.6.0-cogv0.0.x.1753977659':
+    resolution: {integrity: sha512-RZFJWcq/sYRSS+9PnXsDbrpzSHcp2aH/0c5MlRSaAyWkU9eILQP7s83sOYfC8O84Zhco2UUjB72c96YV6X132g==}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -492,6 +499,9 @@ packages:
       '@swc/wasm':
         optional: true
 
+  tslib@2.8.1:
+    resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
+
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
@@ -581,6 +591,10 @@ snapshots:
     dependencies:
       '@eslint/core': 0.16.0
       levn: 0.4.1
+
+  '@grafana/grafana-foundation-sdk@11.6.0-cogv0.0.x.1753977659':
+    dependencies:
+      tslib: 2.8.1
 
   '@humanfs/core@0.19.1': {}
 
@@ -979,6 +993,8 @@ snapshots:
       typescript: 5.9.3
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
+
+  tslib@2.8.1: {}
 
   type-check@0.4.0:
     dependencies:
