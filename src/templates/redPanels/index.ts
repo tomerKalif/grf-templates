@@ -87,7 +87,7 @@ export const errorRateStat = (serviceName: string): stat.PanelBuilder => {
     .withTarget(
       new prometheus.DataqueryBuilder()
         .expr(`(sum(rate(http_request_duration_seconds_count{service="${serviceName}", code=~"5.."}[10m])) / sum(rate(http_request_duration_seconds_count{service="${serviceName}"}[10m]))) * 100`)
-        .refId("A")
+        .refId("A").legendFormat("{{__auto}}")
     );
 };
 
@@ -112,6 +112,6 @@ export const durationTimeseries = (serviceName: string): timeseries.PanelBuilder
     .withTarget(
       new prometheus.DataqueryBuilder()
         .expr(`histogram_quantile(0.90, sum(rate(http_request_duration_seconds_bucket{service="${serviceName}"}[10m])) by (le, route))`)
-        .refId("A")
+        .refId("A").legendFormat("{{__auto}}")
     );
 };
