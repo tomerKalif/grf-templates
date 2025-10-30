@@ -5,13 +5,14 @@ import * as stat from '@grafana/grafana-foundation-sdk/stat';
 import * as units from '@grafana/grafana-foundation-sdk/units';
 import * as common from '@grafana/grafana-foundation-sdk/common';
 import { defaultTimeseries } from '../common.js';
+import { prometheusDatasource } from '../datasources.js';
 
 // Outgoing request rate grouped by target (upstream dependency)
 export const outgoingRequestRateByTarget = (serviceName: string): timeseries.PanelBuilder => {
   return defaultTimeseries()
     .title('Outgoing request rate by target')
     .description('Number of outgoing requests per second grouped by target.')
-    .datasource({ uid: 'prometheus', type: 'prometheus' })
+    .datasource(prometheusDatasource)
     .unit(units.RequestsPerSecond)
     .withTarget(
       new prometheus.DataqueryBuilder()
@@ -28,7 +29,7 @@ export const outgoingErrorRateByTarget = (
   return new stat.PanelBuilder()
     .title('Outgoing error rate by target')
     .description('Percentage of 5xx for outgoing requests grouped by target.')
-    .datasource({ uid: 'prometheus', type: 'prometheus' })
+    .datasource(prometheusDatasource)
     .unit(units.Percent)
     .thresholds(
       new dashboard.ThresholdsConfigBuilder()
@@ -65,7 +66,7 @@ export const outgoingDurationP90ByTarget = (
   return defaultTimeseries()
     .title('Outgoing P90 duration by target')
     .description('90th percentile of outgoing request duration grouped by target.')
-    .datasource({ uid: 'prometheus', type: 'prometheus' })
+    .datasource(prometheusDatasource)
     .unit(units.Seconds)
     .thresholds(
       new dashboard.ThresholdsConfigBuilder()

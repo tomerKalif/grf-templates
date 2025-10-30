@@ -11,19 +11,29 @@ import { outgoingRequestRateByTarget, outgoingErrorRateByTarget, outgoingDuratio
  * Custom Dashboard Builder that provides a fluent API for building Grafana dashboards
  */
 export class DashboardBuilder {
+  // Core builder and identity
   private grafanaBuilder: dashboard.DashboardBuilder;
-  
-  // Keep initial service name for linking convenience
-  private readonly initialServiceName?: string;
+  private readonly initialServiceName?: string; // Used for defaults and linking
+
+  // Deep-dive generation controls
+  private shouldGenerateApiDeepDive: boolean = false;
+  private shouldGenerateDependenciesDeepDive: boolean = false;
+  private apiDeepDiveUid?: string;
+  private depsDeepDiveUid?: string;
+
+  // Generated deep-dive dashboards (computed once)
   private generatedApiDeepDive?: dashboard.Dashboard;
   private generatedDependenciesDeepDive?: dashboard.Dashboard;
+
+  // UI state for dashboard list panel
   private deepDiveListPanel?: dashlist.PanelBuilder;
   private deepDivesAppended: boolean = false;
 
   private constructor(config: DashboardConfig) {
     this.initialServiceName = config.serviceName;
+    const mainUid = config.uids?.main || config.uid || `${config.serviceName}-dashboard`;
     this.grafanaBuilder = new dashboard.DashboardBuilder(`${config.dashboardTitle} - ${config.serviceName}`)
-      .uid(config.uid || `${config.serviceName}-dashboard`)
+      .uid(mainUid)
       .tags(config.tags || ["generated", config.serviceName])
       .editable()
       .tooltip(dashboard.DashboardCursorSync.Crosshair)
@@ -56,19 +66,16 @@ export class DashboardBuilder {
 
     // Auto-create deep dive dashboards and list them
     const apiDeepDiveUid = `${svc}-api-deep-dive`;
-    this.generatedApiDeepDive = createApiDeepDiveDashboard({
-      dashboardTitle: 'API Deep Dive',
-      serviceName: svc,
-      uid: apiDeepDiveUid,
-      tags: ['generated', svc, 'deep-dive', 'api']
-    });
     const depsDeepDiveUid = `${svc}-dependencies-deep-dive`;
-    this.generatedDependenciesDeepDive = createDependenciesDeepDiveDashboard({
-      dashboardTitle: 'Dependencies Deep Dive',
-      serviceName: svc,
-      uid: depsDeepDiveUid,
-      tags: ['generated', svc, 'deep-dive', 'dependencies']
-    });
+    // Set generation flags only once to avoid double usage
+    if (!this.shouldGenerateApiDeepDive && !this.generatedApiDeepDive) {
+      this.shouldGenerateApiDeepDive = true;
+      this.apiDeepDiveUid = apiDeepDiveUid;
+    }
+    if (!this.shouldGenerateDependenciesDeepDive && !this.generatedDependenciesDeepDive) {
+      this.shouldGenerateDependenciesDeepDive = true;
+      this.depsDeepDiveUid = depsDeepDiveUid;
+    }
     this.withDeepDiveDashboardList([
       { uid: apiDeepDiveUid, title: 'API Deep Dive' },
       { uid: depsDeepDiveUid, title: 'Dependencies Deep Dive' }
@@ -217,6 +224,32 @@ export class DashboardBuilder {
    */
   build(): dashboard.Dashboard {
     this.appendDeepDivesRowIfAny();
+    // Inline generation of deep-dive dashboards if requested by withApiMetrics
+    const svc = this.initialServiceName ?? '';
+    if (svc) {
+      if (this.shouldGenerateApiDeepDive && !this.generatedApiDeepDive) {
+        const apiUid = this.apiDeepDiveUid ?? `${svc}-api-deep-dive`;
+        const apiDeepDiveBuilder = DashboardBuilder.create({
+          dashboardTitle: 'API Deep Dive',
+          serviceName: svc,
+          uid: apiUid,
+          tags: ['generated', svc, 'deep-dive', 'api']
+        });
+        this.generatedApiDeepDive = apiDeepDiveBuilder.withApiDeepDive({ serviceName: svc }).build();
+        this.shouldGenerateApiDeepDive = false;
+      }
+      if (this.shouldGenerateDependenciesDeepDive && !this.generatedDependenciesDeepDive) {
+        const depsUid = this.depsDeepDiveUid ?? `${svc}-dependencies-deep-dive`;
+        const depsDeepDiveBuilder = DashboardBuilder.create({
+          dashboardTitle: 'Dependencies Deep Dive',
+          serviceName: svc,
+          uid: depsUid,
+          tags: ['generated', svc, 'deep-dive', 'dependencies']
+        });
+        this.generatedDependenciesDeepDive = depsDeepDiveBuilder.withDependenciesDeepDive({ serviceName: svc }).build();
+        this.shouldGenerateDependenciesDeepDive = false;
+      }
+    }
     return this.grafanaBuilder.build(); 
 }
 
@@ -237,7 +270,10 @@ export const createApiTrafficDeepDiveDashboard = (config: DashboardConfig): dash
   const builder = DashboardBuilder.create({
     ...config,
     dashboardTitle: config.dashboardTitle || 'API Traffic Deep Dive',
-    uid: config.uid || `${config.serviceName}-api-traffic-deep-dive`,
+    uids: {
+      ...config.uids,
+      main: config.uids?.main || config.uid || `${config.serviceName}-api-traffic-deep-dive`
+    },
     tags: config.tags || ['generated', config.serviceName, 'deep-dive', 'traffic']
   });
 
@@ -249,31 +285,9 @@ export const createApiTrafficDeepDiveDashboard = (config: DashboardConfig): dash
 /**
  * Create a standalone Dependencies Deep Dive dashboard
  */
-export const createDependenciesDeepDiveDashboard = (config: DashboardConfig): dashboard.Dashboard => {
-  const builder = DashboardBuilder.create({
-    ...config,
-    dashboardTitle: config.dashboardTitle || 'Dependencies Deep Dive',
-    uid: config.uid || `${config.serviceName}-dependencies-deep-dive`,
-    tags: config.tags || ['generated', config.serviceName, 'deep-dive', 'dependencies']
-  });
-
-  return builder
-    .withDependenciesDeepDive({ serviceName: config.serviceName })
-    .build();
-};
+// Removed: createDependenciesDeepDiveDashboard (migrated into DashboardBuilder private method)
 
 /**
  * Create a standalone API Deep Dive (Traffic + Dependencies) dashboard
  */
-export const createApiDeepDiveDashboard = (config: DashboardConfig): dashboard.Dashboard => {
-  const builder = DashboardBuilder.create({
-    ...config,
-    dashboardTitle: config.dashboardTitle || 'API Deep Dive',
-    uid: config.uid || `${config.serviceName}-api-deep-dive`,
-    tags: config.tags || ['generated', config.serviceName, 'deep-dive', 'api']
-  });
-
-  return builder
-    .withApiDeepDive({ serviceName: config.serviceName })
-    .build();
-}
+// Removed: createApiDeepDiveDashboard (migrated into DashboardBuilder private method)

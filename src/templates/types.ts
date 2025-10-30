@@ -1,7 +1,14 @@
 export interface DashboardConfig {
   dashboardTitle: string;
   serviceName: string;
+  // Deprecated: prefer `uids.main`
   uid?: string;
+  // UIDs are kept in a separate section to clearly control idempotency per dashboard
+  uids?: {
+    main?: string;
+    apiDeepDive?: string;
+    dependenciesDeepDive?: string;
+  };
   tags?: string[];
   refresh?: string;
   timeRange?: {

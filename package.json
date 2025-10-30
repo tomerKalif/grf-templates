@@ -9,13 +9,15 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "start:dev": "tsx src/index.ts",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "dashboards:build": "tsx src/scripts/generate-dashboards.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.18.3",
   "devDependencies": {
+    "@types/node": "^20.12.12",
     "eslint": "^9.37.0",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
@@ -24,6 +26,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@grafana/grafana-foundation-sdk": "11.6.0-cogv0.0.x.1753977659"
+    "@grafana/grafana-foundation-sdk": "11.6.0-cogv0.0.x.1753977659",
+    "@types/node": "^24.9.2"
   }
 }

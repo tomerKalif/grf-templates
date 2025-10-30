@@ -5,12 +5,13 @@ import * as stat from '@grafana/grafana-foundation-sdk/stat';
 import * as units from '@grafana/grafana-foundation-sdk/units';
 import * as common from '@grafana/grafana-foundation-sdk/common';
 import { defaultTimeseries } from '../common.js';
+import { prometheusDatasource } from '../datasources.js';
 
 export const requestRateTimeseries = (serviceName: string): timeseries.PanelBuilder => {
   return defaultTimeseries()
     .title("Request rate")
     .description("Number of requests handled by the service, per second.")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .unit(units.RequestsPerSecond)
     .withTarget(
       new prometheus.DataqueryBuilder()
@@ -23,7 +24,7 @@ export const errorRateStat = (serviceName: string, thresholds?: { yellow: number
   return new stat.PanelBuilder()
     .title("Error rate")
     .description("Percentage of failed requests.")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .unit(units.Percent)
     .thresholds(
       new dashboard.ThresholdsConfigBuilder()
@@ -56,7 +57,7 @@ export const durationTimeseries = (serviceName: string, thresholds?: { red: numb
   return defaultTimeseries()
     .title("90th percentile of request duration")
     .description("90th percentile of request duration, per second.")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .unit(units.Seconds)
     .thresholds(
       new dashboard.ThresholdsConfigBuilder()
@@ -82,7 +83,7 @@ export const cpuVsRequestsTimeseries = (serviceName: string): timeseries.PanelBu
   return defaultTimeseries()
     .title("CPU vs Requests (Saturation)")
     .description("Overlay CPU usage % and total request rate to visualize saturation.")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .withTarget(
       new prometheus.DataqueryBuilder()
         .expr(`irate(process_cpu_user_seconds_total{app_container_name="${serviceName}"}[2m]) * 100`)
@@ -99,7 +100,7 @@ export const requestRateByMethodTimeseries = (serviceName: string): timeseries.P
   return defaultTimeseries()
     .title("Request rate by method")
     .description("Requests per second grouped by HTTP method.")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .unit(units.RequestsPerSecond)
     .withTarget(
       new prometheus.DataqueryBuilder()

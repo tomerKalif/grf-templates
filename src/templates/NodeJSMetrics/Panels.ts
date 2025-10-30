@@ -5,12 +5,13 @@ import * as table from '@grafana/grafana-foundation-sdk/table';
 import * as units from '@grafana/grafana-foundation-sdk/units';
 import * as common from '@grafana/grafana-foundation-sdk/common';
 import { defaultTimeseries } from '../common.js';
+import { prometheusDatasource } from '../datasources.js';
 
 export const cpuTimeseries = (serviceName: string, thresholds?: { yellow: number; red: number }): timeseries.PanelBuilder => {
   return defaultTimeseries()
     .title("CPU Usage")
     .description("CPU usage percentage for Node.js process")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .unit(units.Percent)
     .thresholds(
       new dashboard.ThresholdsConfigBuilder()
@@ -37,7 +38,7 @@ export const memoryTimeseries = (serviceName: string, thresholds?: { yellow: num
   return defaultTimeseries()
     .title("Memory Usage")
     .description("Resident memory usage for Node.js process")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .unit(units.BytesSI)
     .thresholds(
       new dashboard.ThresholdsConfigBuilder()
@@ -64,7 +65,7 @@ export const activeHandlesTimeseries = (serviceName: string, thresholds?: { yell
   return defaultTimeseries()
     .title("Active Handles")
     .description("Number of active handles in Node.js process")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .unit(units.Short)
     .thresholds(
       new dashboard.ThresholdsConfigBuilder()
@@ -91,7 +92,7 @@ export const activeRequestsTimeseries = (serviceName: string, thresholds?: { yel
   return defaultTimeseries()
     .title("Active Requests")
     .description("Number of active requests in Node.js process")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .unit(units.Short)
     .thresholds(
       new dashboard.ThresholdsConfigBuilder()
@@ -118,7 +119,7 @@ export const eventLoopLagTimeseries = (serviceName: string, thresholds?: { red: 
   return defaultTimeseries()
     .title("Event Loop Lag (p99)")
     .description("99th percentile of Node.js event loop lag.")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .unit(units.Seconds)
     .thresholds(
       new dashboard.ThresholdsConfigBuilder()
@@ -144,7 +145,7 @@ export const cpuPerInstanceTable = (serviceName: string): table.PanelBuilder => 
   return new table.PanelBuilder()
     .title("CPU per instance (%)")
     .description("Instant CPU usage percentage per instance.")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .withTarget(
       new prometheus.DataqueryBuilder()
         .expr(`topk(5, sum by (instance) (irate(process_cpu_user_seconds_total{app_container_name="${serviceName}"}[2m]) * 100))`)
