@@ -47,26 +47,27 @@ export class DashboardBuilder {
    * Adds API metrics row to the dashboard
    */
   withApiMetrics(config: ApiMetricsConfig): this {
+    const svc = config.serviceName ?? (this.initialServiceName as string);
     this.grafanaBuilder = this.grafanaBuilder
       .withRow(new dashboard.RowBuilder("API metrics"))
-      .withPanel(requestRateTimeseries(config.serviceName).span(24).height(8))
-      .withPanel(errorRateStat(config.serviceName, config.errorRateThresholds).span(12).height(8))
-      .withPanel(durationTimeseries(config.serviceName, config.durationThresholds).span(12).height(8));
+      .withPanel(requestRateTimeseries(svc).span(24).height(8))
+      .withPanel(errorRateStat(svc, config.errorRateThresholds).span(12).height(8))
+      .withPanel(durationTimeseries(svc, config.durationThresholds).span(12).height(8));
 
     // Auto-create deep dive dashboards and list them
-    const apiDeepDiveUid = `${config.serviceName}-api-deep-dive`;
+    const apiDeepDiveUid = `${svc}-api-deep-dive`;
     this.generatedApiDeepDive = createApiDeepDiveDashboard({
       dashboardTitle: 'API Deep Dive',
-      serviceName: config.serviceName,
+      serviceName: svc,
       uid: apiDeepDiveUid,
-      tags: ['generated', config.serviceName, 'deep-dive', 'api']
+      tags: ['generated', svc, 'deep-dive', 'api']
     });
-    const depsDeepDiveUid = `${config.serviceName}-dependencies-deep-dive`;
+    const depsDeepDiveUid = `${svc}-dependencies-deep-dive`;
     this.generatedDependenciesDeepDive = createDependenciesDeepDiveDashboard({
       dashboardTitle: 'Dependencies Deep Dive',
-      serviceName: config.serviceName,
+      serviceName: svc,
       uid: depsDeepDiveUid,
-      tags: ['generated', config.serviceName, 'deep-dive', 'dependencies']
+      tags: ['generated', svc, 'deep-dive', 'dependencies']
     });
     this.withDeepDiveDashboardList([
       { uid: apiDeepDiveUid, title: 'API Deep Dive' },
@@ -79,13 +80,14 @@ export class DashboardBuilder {
    * Adds Node.js metrics row to the dashboard
    */
   withNodeJSMetrics(config: NodeJSMetricsConfig): this {
+    const svc = config.serviceName ?? (this.initialServiceName as string);
     this.grafanaBuilder = this.grafanaBuilder
       .withRow(new dashboard.RowBuilder("Node.js Metrics"))
-      .withPanel(cpuPerInstanceTable(config.serviceName).span(12).height(8))
-      .withPanel(memoryTimeseries(config.serviceName, config.memoryThresholds).span(12).height(8))
-      .withPanel(activeHandlesTimeseries(config.serviceName, config.handlesThresholds).span(12).height(8))
-      .withPanel(activeRequestsTimeseries(config.serviceName, config.requestsThresholds).span(12).height(8))
-      .withPanel(eventLoopLagTimeseries(config.serviceName, { red: 0.2 }).span(24).height(8));
+      .withPanel(cpuPerInstanceTable(svc).span(12).height(8))
+      .withPanel(memoryTimeseries(svc, config.memoryThresholds).span(12).height(8))
+      .withPanel(activeHandlesTimeseries(svc, config.handlesThresholds).span(12).height(8))
+      .withPanel(activeRequestsTimeseries(svc, config.requestsThresholds).span(12).height(8))
+      .withPanel(eventLoopLagTimeseries(svc, { red: 0.2 }).span(24).height(8));
     return this;
   }
 
@@ -93,11 +95,12 @@ export class DashboardBuilder {
    * Adds API Traffic Deep Dive row (by route, method, status)
    */
   withApiTrafficDeepDive(config: ApiMetricsConfig): this {
+    const svc = config.serviceName ?? (this.initialServiceName as string);
     this.grafanaBuilder = this.grafanaBuilder
       .withRow(new dashboard.RowBuilder("API Traffic Deep Dive"))
-      .withPanel(requestRateTimeseries(config.serviceName).span(8).height(8))
-      .withPanel(requestRateByMethodTimeseries(config.serviceName).span(8).height(8))
-      .withPanel(requestRateByStatusTimeseries(config.serviceName).span(8).height(8));
+      .withPanel(requestRateTimeseries(svc).span(8).height(8))
+      .withPanel(requestRateByMethodTimeseries(svc).span(8).height(8))
+      .withPanel(requestRateByStatusTimeseries(svc).span(8).height(8));
     return this;
   }
 
@@ -105,11 +108,12 @@ export class DashboardBuilder {
    * Adds Dependencies (upstream/downstream) deep dive row
    */
   withDependenciesDeepDive(config: ApiMetricsConfig): this {
+    const svc = config.serviceName ?? (this.initialServiceName as string);
     this.grafanaBuilder = this.grafanaBuilder
       .withRow(new dashboard.RowBuilder('Dependencies Deep Dive'))
-      .withPanel(outgoingRequestRateByTarget(config.serviceName).span(8).height(8))
-      .withPanel(outgoingDurationP90ByTarget(config.serviceName).span(8).height(8))
-      .withPanel(outgoingErrorRateByTarget(config.serviceName).span(8).height(8));
+      .withPanel(outgoingRequestRateByTarget(svc).span(8).height(8))
+      .withPanel(outgoingDurationP90ByTarget(svc).span(8).height(8))
+      .withPanel(outgoingErrorRateByTarget(svc).span(8).height(8));
     return this;
   }
 
@@ -120,9 +124,10 @@ export class DashboardBuilder {
     this.withApiTrafficDeepDive(config);
     this.withDependenciesDeepDive(config);
     // Saturation row: CPU vs Requests overlay
+    const svc = config.serviceName ?? (this.initialServiceName as string);
     this.grafanaBuilder = this.grafanaBuilder
       .withRow(new dashboard.RowBuilder('Saturation'))
-      .withPanel(cpuVsRequestsTimeseries(config.serviceName).span(24).height(8));
+      .withPanel(cpuVsRequestsTimeseries(svc).span(24).height(8));
     return this;
   }
 

@@ -12,7 +12,7 @@ export interface DashboardConfig {
 }
 
 export interface ApiMetricsConfig {
-  serviceName: string;
+  serviceName?: string;
   errorRateThresholds?: {
     yellow: number;
     red: number;

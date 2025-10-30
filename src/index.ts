@@ -9,9 +9,8 @@ const dashboard = DashboardBuilder.create({
   refresh: "30s",
   timeRange: { from: "now-1h", to: "now" }
 })
-  // Add API metrics row for a specific service (will also create deep-dive dashboards and append a dashboard list at the end)
+  // Add API metrics row for a specific service (deep-dive dashboards and dashboard list appended automatically)
   .withApiMetrics({
-    serviceName: "express-demo-server",
     errorRateThresholds: {
       yellow: 2,  // 2% error rate threshold for yellow
       red: 10     // 10% error rate threshold for red
@@ -22,7 +21,6 @@ const dashboard = DashboardBuilder.create({
   })
   // Add Node.js metrics row
   .withNodeJSMetrics({
-    serviceName: "express-demo-server",
     cpuThresholds: {
       yellow: 60,  // 60% CPU threshold for yellow
       red: 85      // 85% CPU threshold for red
