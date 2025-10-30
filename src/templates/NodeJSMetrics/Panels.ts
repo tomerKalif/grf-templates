@@ -1,6 +1,7 @@
 import * as dashboard from '@grafana/grafana-foundation-sdk/dashboard';
 import * as prometheus from '@grafana/grafana-foundation-sdk/prometheus';
 import * as timeseries from '@grafana/grafana-foundation-sdk/timeseries';
+import * as table from '@grafana/grafana-foundation-sdk/table';
 import * as units from '@grafana/grafana-foundation-sdk/units';
 import * as common from '@grafana/grafana-foundation-sdk/common';
 import { defaultTimeseries } from '../common.js';
@@ -110,5 +111,44 @@ export const activeRequestsTimeseries = (serviceName: string, thresholds?: { yel
         .expr(`nodejs_active_requests{pod_container_name="${serviceName}"}`)
         .refId("A")
         .legendFormat("Active Requests")
+    );
+};
+
+export const eventLoopLagTimeseries = (serviceName: string, thresholds?: { red: number }): timeseries.PanelBuilder => {
+  return defaultTimeseries()
+    .title("Event Loop Lag (p99)")
+    .description("99th percentile of Node.js event loop lag.")
+    .datasource({ uid: "prometheus", type: "prometheus" })
+    .unit(units.Seconds)
+    .thresholds(
+      new dashboard.ThresholdsConfigBuilder()
+        .mode(dashboard.ThresholdsMode.Absolute)
+        .steps([
+          { color: "green", value: null },
+          { color: "red", value: thresholds?.red ?? 0.2 }
+        ])
+    )
+    .thresholdsStyle(
+      new common.GraphThresholdsStyleConfigBuilder()
+        .mode(common.GraphThresholdsStyleMode.Line)
+    )
+    .withTarget(
+      new prometheus.DataqueryBuilder()
+        .expr(`histogram_quantile(0.99, sum(rate(nodejs_eventloop_lag_seconds_bucket{app_container_name="${serviceName}"}[10m])) by (le))`)
+        .refId("A")
+        .legendFormat("p99")
+    );
+};
+
+export const cpuPerInstanceTable = (serviceName: string): table.PanelBuilder => {
+  return new table.PanelBuilder()
+    .title("CPU per instance (%)")
+    .description("Instant CPU usage percentage per instance.")
+    .datasource({ uid: "prometheus", type: "prometheus" })
+    .withTarget(
+      new prometheus.DataqueryBuilder()
+        .expr(`topk(5, sum by (instance) (irate(process_cpu_user_seconds_total{app_container_name="${serviceName}"}[2m]) * 100))`)
+        .refId("A")
+        .legendFormat("{{instance}}")
     );
 };

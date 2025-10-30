@@ -9,7 +9,7 @@ const dashboard = DashboardBuilder.create({
   refresh: "30s",
   timeRange: { from: "now-1h", to: "now" }
 })
-  // Add API metrics row for a specific service
+  // Add API metrics row for a specific service (will also create deep-dive dashboards and append a dashboard list at the end)
   .withApiMetrics({
     serviceName: "express-demo-server",
     errorRateThresholds: {
@@ -44,6 +44,5 @@ const dashboard = DashboardBuilder.create({
 
 // Copy to clipboard
 const dashboardJson = JSON.stringify(dashboard, null, 2);
-
 
 console.log(dashboardJson);

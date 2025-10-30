@@ -1,9 +1,10 @@
 import * as dashboard from '@grafana/grafana-foundation-sdk/dashboard';
 import type { DashboardConfig, ApiMetricsConfig } from './types.js';
 import type { NodeJSMetricsConfig } from './NodeJSMetrics/index.js';
-import { requestRateTimeseries, errorRateStat, durationTimeseries, requestRateByMethodTimeseries, requestRateByStatusTimeseries } from './APIMetrics/panels.js';
-import { cpuTimeseries, memoryTimeseries, activeHandlesTimeseries, activeRequestsTimeseries } from './NodeJSMetrics/Panels.js';
+import { requestRateTimeseries, errorRateStat, durationTimeseries, requestRateByMethodTimeseries, requestRateByStatusTimeseries, cpuVsRequestsTimeseries } from './APIMetrics/panels.js';
+import { cpuTimeseries, memoryTimeseries, activeHandlesTimeseries, activeRequestsTimeseries, eventLoopLagTimeseries, cpuPerInstanceTable } from './NodeJSMetrics/Panels.js';
 import * as text from '@grafana/grafana-foundation-sdk/text';
+import * as dashlist from '@grafana/grafana-foundation-sdk/dashboardlist';
 import { outgoingRequestRateByTarget, outgoingErrorRateByTarget, outgoingDurationP90ByTarget } from './Dependencies/index.js';
 
 /**
@@ -14,6 +15,10 @@ export class DashboardBuilder {
   
   // Keep initial service name for linking convenience
   private readonly initialServiceName?: string;
+  private generatedApiDeepDive?: dashboard.Dashboard;
+  private generatedDependenciesDeepDive?: dashboard.Dashboard;
+  private deepDiveListPanel?: dashlist.PanelBuilder;
+  private deepDivesAppended: boolean = false;
 
   private constructor(config: DashboardConfig) {
     this.initialServiceName = config.serviceName;
@@ -47,6 +52,26 @@ export class DashboardBuilder {
       .withPanel(requestRateTimeseries(config.serviceName).span(24).height(8))
       .withPanel(errorRateStat(config.serviceName, config.errorRateThresholds).span(12).height(8))
       .withPanel(durationTimeseries(config.serviceName, config.durationThresholds).span(12).height(8));
+
+    // Auto-create deep dive dashboards and list them
+    const apiDeepDiveUid = `${config.serviceName}-api-deep-dive`;
+    this.generatedApiDeepDive = createApiDeepDiveDashboard({
+      dashboardTitle: 'API Deep Dive',
+      serviceName: config.serviceName,
+      uid: apiDeepDiveUid,
+      tags: ['generated', config.serviceName, 'deep-dive', 'api']
+    });
+    const depsDeepDiveUid = `${config.serviceName}-dependencies-deep-dive`;
+    this.generatedDependenciesDeepDive = createDependenciesDeepDiveDashboard({
+      dashboardTitle: 'Dependencies Deep Dive',
+      serviceName: config.serviceName,
+      uid: depsDeepDiveUid,
+      tags: ['generated', config.serviceName, 'deep-dive', 'dependencies']
+    });
+    this.withDeepDiveDashboardList([
+      { uid: apiDeepDiveUid, title: 'API Deep Dive' },
+      { uid: depsDeepDiveUid, title: 'Dependencies Deep Dive' }
+    ]);
     return this;
   }
 
@@ -56,10 +81,11 @@ export class DashboardBuilder {
   withNodeJSMetrics(config: NodeJSMetricsConfig): this {
     this.grafanaBuilder = this.grafanaBuilder
       .withRow(new dashboard.RowBuilder("Node.js Metrics"))
-      .withPanel(cpuTimeseries(config.serviceName, config.cpuThresholds).span(12).height(8))
+      .withPanel(cpuPerInstanceTable(config.serviceName).span(12).height(8))
       .withPanel(memoryTimeseries(config.serviceName, config.memoryThresholds).span(12).height(8))
       .withPanel(activeHandlesTimeseries(config.serviceName, config.handlesThresholds).span(12).height(8))
-      .withPanel(activeRequestsTimeseries(config.serviceName, config.requestsThresholds).span(12).height(8));
+      .withPanel(activeRequestsTimeseries(config.serviceName, config.requestsThresholds).span(12).height(8))
+      .withPanel(eventLoopLagTimeseries(config.serviceName, { red: 0.2 }).span(24).height(8));
     return this;
   }
 
@@ -93,24 +119,44 @@ export class DashboardBuilder {
   withApiDeepDive(config: ApiMetricsConfig): this {
     this.withApiTrafficDeepDive(config);
     this.withDependenciesDeepDive(config);
+    // Saturation row: CPU vs Requests overlay
+    this.grafanaBuilder = this.grafanaBuilder
+      .withRow(new dashboard.RowBuilder('Saturation'))
+      .withPanel(cpuVsRequestsTimeseries(config.serviceName).span(24).height(8));
     return this;
   }
 
   /**
    * Adds a link panel to a separate API Traffic Deep Dive dashboard
    */
-  withLinkToApiTrafficDeepDive(deepDiveUid: string, title: string = 'Open API Traffic Deep Dive'): this {
+  withDeepDiveDashboardList(_items: Array<{ uid: string; title: string }>): this {
     const service = this.initialServiceName ?? '';
-    const markdown = `[${title}](\/d\/${deepDiveUid}?var-pod_container_name=${service})`;
-    const linkPanel = new text.PanelBuilder()
+    // Native Dashboard list panel per docs: https://grafana.com/docs/grafana/latest/panels-visualizations/visualizations/dashboard-list/
+    // Configure to show ALL dashboards associated with the service (tagged with service name)
+    this.deepDiveListPanel = new dashlist.PanelBuilder()
       .title('Deep Dives')
-      .mode(text.TextMode.Markdown)
-      .content(markdown);
-
-    this.grafanaBuilder = this.grafanaBuilder
-      .withRow(new dashboard.RowBuilder('Deep Dives'))
-      .withPanel(linkPanel.span(24).height(4));
+      .description('All dashboards tagged with this service; links keep time range and variables')
+      .keepTime(true)
+      .includeVars(true)
+      .showStarred(false)
+      .showRecentlyViewed(false)
+      .showSearch(true)
+      .showHeadings(false)
+      .showFolderNames(true)
+      .maxItems(50)
+      .query('')
+      .tags([service]);
     return this;
+  }
+
+  private appendDeepDivesRowIfAny(): void {
+    if (this.deepDivesAppended) return;
+    if (this.deepDiveListPanel) {
+      this.grafanaBuilder = this.grafanaBuilder
+        .withRow(new dashboard.RowBuilder('Deep Dives'))
+        .withPanel(this.deepDiveListPanel.span(24).height(6));
+      this.deepDivesAppended = true;
+    }
   }
 
   /**
@@ -165,15 +211,10 @@ export class DashboardBuilder {
    * Builds and returns the final dashboard
    */
   build(): dashboard.Dashboard {
-    return this.grafanaBuilder.build();
-  }
+    this.appendDeepDivesRowIfAny();
+    return this.grafanaBuilder.build(); 
+}
 
-  /**
-   * Gets the underlying Grafana dashboard builder (for advanced usage)
-   */
-  getGrafanaBuilder(): dashboard.DashboardBuilder {
-    return this.grafanaBuilder;
-  }
 }
 
 /**
@@ -230,4 +271,4 @@ export const createApiDeepDiveDashboard = (config: DashboardConfig): dashboard.D
   return builder
     .withApiDeepDive({ serviceName: config.serviceName })
     .build();
-};
+}

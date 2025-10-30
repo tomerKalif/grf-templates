@@ -77,6 +77,24 @@ export const durationTimeseries = (serviceName: string, thresholds?: { red: numb
     );
 };
 
+// Combined overlay panel for saturation: CPU usage vs total request rate
+export const cpuVsRequestsTimeseries = (serviceName: string): timeseries.PanelBuilder => {
+  return defaultTimeseries()
+    .title("CPU vs Requests (Saturation)")
+    .description("Overlay CPU usage % and total request rate to visualize saturation.")
+    .datasource({ uid: "prometheus", type: "prometheus" })
+    .withTarget(
+      new prometheus.DataqueryBuilder()
+        .expr(`irate(process_cpu_user_seconds_total{app_container_name="${serviceName}"}[2m]) * 100`)
+        .refId("A").legendFormat("CPU %")
+    )
+    .withTarget(
+      new prometheus.DataqueryBuilder()
+        .expr(`sum(rate(http_request_duration_seconds_count{app_container_name="${serviceName}"}[10m]))`)
+        .refId("B").legendFormat("RPS")
+    );
+};
+
 export const requestRateByMethodTimeseries = (serviceName: string): timeseries.PanelBuilder => {
   return defaultTimeseries()
     .title("Request rate by method")
