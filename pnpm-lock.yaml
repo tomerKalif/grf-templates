@@ -17,6 +17,9 @@ importers:
       chalk:
         specifier: ^5.3.0
         version: 5.6.2
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
     devDependencies:
       eslint:
         specifier: ^9.37.0
@@ -380,6 +383,10 @@ packages:
   diff@4.0.2:
     resolution: {integrity: sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==}
     engines: {node: '>=0.3.1'}
+
+  dotenv@17.2.3:
+    resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
+    engines: {node: '>=12'}
 
   esbuild@0.25.11:
     resolution: {integrity: sha512-KohQwyzrKTQmhXDW1PjCv3Tyspn9n5GcY2RTDqeORIdIJY8yKIF7sTSopFmn/wpMPW4rdPXI0UE5LJLuq3bx0Q==}
@@ -981,6 +988,8 @@ snapshots:
   deep-is@0.1.4: {}
 
   diff@4.0.2: {}
+
+  dotenv@17.2.3: {}
 
   esbuild@0.25.11:
     optionalDependencies:

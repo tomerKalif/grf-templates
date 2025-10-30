@@ -1,3 +1,6 @@
+import { config } from "dotenv";
+config();
+
 import { createInterface } from "node:readline";
 import { stdin as input, stdout as output } from "node:process";
 import { promises as fs } from "node:fs";
@@ -5,6 +8,7 @@ import { join } from "node:path";
 import chalk from "chalk";
 
 import { services } from "./services/index.js";
+import { uploadDashboardToGrafana as uploadToGrafana } from "./services/grafana-upload.js";
 
 type ServiceName = keyof typeof services;
 
@@ -178,6 +182,69 @@ async function exportSingleDashboard(rl: ReturnType<typeof createRl>): Promise<v
   console.log(`Wrote ${serviceName} main dashboard -> ${defaultPath}`);
 }
 
+async function uploadDashboardToGrafana(rl: ReturnType<typeof createRl>): Promise<void> {
+  const entries = Object.entries(services) as Array<[ServiceName, (typeof services)[ServiceName]]>;
+  if (entries.length === 0) {
+    console.log(chalk.red("No services available."));
+    return;
+  }
+
+  const names = entries.map(([name]) => name as string);
+  const picked = await selectFromList(names, "Select a service to upload");
+  if (picked === null) return;
+
+  const selected = entries[picked]!;
+  const serviceName = selected[0];
+  const service = selected[1];
+
+  // Get Grafana configuration
+  const defaultBaseUrl = process.env.GRAFANA_URL || "";
+  const defaultToken = process.env.GRAFANA_API_KEY || "";
+  const defaultParentFolder = process.env.GRAFANA_PARENT_FOLDER || "Services";
+
+  console.log();
+  const baseUrl = defaultBaseUrl
+  if (!baseUrl) {
+    console.log(chalk.red("Grafana URL is required."));
+    return;
+  }
+
+const token = defaultToken;
+  if (!token) {
+    console.log(chalk.red("Grafana API Key is required."));
+    return;
+  }
+
+  const parentFolder = "Services";
+
+  console.log();
+  console.log(chalk.yellow("Building dashboard..."));
+  const built = service.build();
+  const dashboard = built.main;
+
+  console.log(chalk.yellow("Ensuring folder structure..."));
+  console.log(chalk.yellow(`Uploading dashboard to folder '${parentFolder}/${serviceName}'...`));
+  
+  const result = await uploadToGrafana({
+    baseUrl,
+    token,
+    parentFolder,
+    serviceName: String(serviceName),
+    dashboard
+  });
+
+  console.log();
+  if (result.success) {
+    console.log(chalk.green(`✓ Successfully uploaded dashboard!`));
+    console.log(chalk.dim(`  Folder: ${result.folderPath}`));
+    console.log(chalk.dim(`  UID: ${result.uid}`));
+    console.log(chalk.dim(`  URL: ${result.dashboardUrl}`));
+  } else {
+    console.log(chalk.red(`✗ Failed to upload dashboard:`));
+    console.log(chalk.red(result.error));
+  }
+}
+
 async function main(): Promise<void> {
   const rl = createRl();
   try {
@@ -185,11 +252,14 @@ async function main(): Promise<void> {
     renderHeader("Minimal Grafana Dashboard CLI");
     const mainOptions = [
       "Export a single service's dashboard to file",
+      "Upload dashboard to Grafana",
       "Quit"
     ];
     const picked = await selectFromList(mainOptions, "Select an action");
     if (picked === 0) {
       await exportSingleDashboard(rl);
+    } else if (picked === 1) {
+      await uploadDashboardToGrafana(rl);
     }
   } finally {
     rl.close();

@@ -28,6 +28,7 @@
   "dependencies": {
     "@grafana/grafana-foundation-sdk": "11.6.0-cogv0.0.x.1753977659",
     "@types/node": "^24.9.2",
-    "chalk": "^5.3.0"
+    "chalk": "^5.3.0",
+    "dotenv": "^17.2.3"
   }
 }
