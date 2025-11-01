@@ -6,6 +6,7 @@ import { cpuTimeseries, memoryTimeseries, activeHandlesTimeseries, activeRequest
 import * as text from '@grafana/grafana-foundation-sdk/text';
 import * as dashlist from '@grafana/grafana-foundation-sdk/dashboardlist';
 import { outgoingRequestRateByTarget, outgoingErrorRateByTarget, outgoingDurationP90ByTarget } from './Dependencies/index.js';
+import { UidFactory } from '../utils/index.js';
 
 /**
  * Custom Dashboard Builder that provides a fluent API for building Grafana dashboards
@@ -29,9 +30,18 @@ export class DashboardBuilder {
   private deepDiveListPanel?: dashlist.PanelBuilder;
   private deepDivesAppended: boolean = false;
 
+  /**
+   * @deprecated Use UidFactory.create() instead
+   * Ensures UID is within Grafana's 40 character limit
+   */
+  static truncateUid(uid: string, maxLength: number = 40): string {
+    return UidFactory.create(uid);
+  }
+
   private constructor(config: DashboardConfig) {
     this.initialServiceName = config.serviceName;
-    const mainUid = config.uids?.main || config.uid || `${config.serviceName}-dashboard`;
+    const baseUid = config.uids?.main || config.uid || `${config.serviceName}-dashboard`;
+    const mainUid = UidFactory.create(baseUid);
     this.grafanaBuilder = new dashboard.DashboardBuilder(`${config.dashboardTitle} - ${config.serviceName}`)
       .uid(mainUid)
       .tags(config.tags || ["generated", config.serviceName])
@@ -65,8 +75,8 @@ export class DashboardBuilder {
       .withPanel(durationTimeseries(svc, config.durationThresholds).span(12).height(8));
 
     // Auto-create deep dive dashboards and list them
-    const apiDeepDiveUid = `${svc}-api-deep-dive`;
-    const depsDeepDiveUid = `${svc}-dependencies-deep-dive`;
+    const apiDeepDiveUid = UidFactory.apiDeepDive(svc);
+    const depsDeepDiveUid = UidFactory.dependenciesDeepDive(svc);
     // Set generation flags only once to avoid double usage
     if (!this.shouldGenerateApiDeepDive && !this.generatedApiDeepDive) {
       this.shouldGenerateApiDeepDive = true;
@@ -172,86 +182,46 @@ export class DashboardBuilder {
   }
 
   /**
-   * Adds a custom row to the dashboard
+   * Builds and returns all dashboards including main and deep dives
    */
-  withRow(row: dashboard.RowBuilder): this {
-    this.grafanaBuilder = this.grafanaBuilder.withRow(row);
-    return this;
-  }
-
-  /**
-   * Adds a custom panel to the dashboard
-   */
-  withPanel(panel: dashboard.PanelBuilder): this {
-    this.grafanaBuilder = this.grafanaBuilder.withPanel(panel);
-    return this;
-  }
-
-  /**
-   * Sets the dashboard UID
-   */
-  uid(uid: string): this {
-    this.grafanaBuilder = this.grafanaBuilder.uid(uid);
-    return this;
-  }
-
-  /**
-   * Sets the dashboard tags
-   */
-  tags(tags: string[]): this {
-    this.grafanaBuilder = this.grafanaBuilder.tags(tags);
-    return this;
-  }
-
-  /**
-   * Sets the refresh interval
-   */
-  refresh(interval: string): this {
-    this.grafanaBuilder = this.grafanaBuilder.refresh(interval);
-    return this;
-  }
-
-  /**
-   * Sets the time range
-   */
-  time(timeRange: { from: string; to: string }): this {
-    this.grafanaBuilder = this.grafanaBuilder.time(timeRange);
-    return this;
-  }
-
-  /**
-   * Builds and returns the final dashboard
-   */
-  build(): dashboard.Dashboard {
+  build(): { main: dashboard.Dashboard; apiDeepDive?: dashboard.Dashboard; dependenciesDeepDive?: dashboard.Dashboard } {
     this.appendDeepDivesRowIfAny();
     // Inline generation of deep-dive dashboards if requested by withApiMetrics
     const svc = this.initialServiceName ?? '';
     if (svc) {
       if (this.shouldGenerateApiDeepDive && !this.generatedApiDeepDive) {
-        const apiUid = this.apiDeepDiveUid ?? `${svc}-api-deep-dive`;
+        const apiUid = this.apiDeepDiveUid ?? UidFactory.apiDeepDive(svc);
         const apiDeepDiveBuilder = DashboardBuilder.create({
           dashboardTitle: 'API Deep Dive',
           serviceName: svc,
           uid: apiUid,
           tags: ['generated', svc, 'deep-dive', 'api']
         });
-        this.generatedApiDeepDive = apiDeepDiveBuilder.withApiDeepDive({ serviceName: svc }).build();
+        this.generatedApiDeepDive = apiDeepDiveBuilder.withApiDeepDive({ serviceName: svc }).build().main;
         this.shouldGenerateApiDeepDive = false;
       }
       if (this.shouldGenerateDependenciesDeepDive && !this.generatedDependenciesDeepDive) {
-        const depsUid = this.depsDeepDiveUid ?? `${svc}-dependencies-deep-dive`;
+        const depsUid = this.depsDeepDiveUid ?? UidFactory.dependenciesDeepDive(svc);
         const depsDeepDiveBuilder = DashboardBuilder.create({
           dashboardTitle: 'Dependencies Deep Dive',
           serviceName: svc,
           uid: depsUid,
           tags: ['generated', svc, 'deep-dive', 'dependencies']
         });
-        this.generatedDependenciesDeepDive = depsDeepDiveBuilder.withDependenciesDeepDive({ serviceName: svc }).build();
+        this.generatedDependenciesDeepDive = depsDeepDiveBuilder.withDependenciesDeepDive({ serviceName: svc }).build().main;
         this.shouldGenerateDependenciesDeepDive = false;
       }
     }
-    return this.grafanaBuilder.build(); 
-}
+    const main = this.grafanaBuilder.build();
+    const result: { main: dashboard.Dashboard; apiDeepDive?: dashboard.Dashboard; dependenciesDeepDive?: dashboard.Dashboard } = { main };
+    if (this.generatedApiDeepDive) {
+      result.apiDeepDive = this.generatedApiDeepDive;
+    }
+    if (this.generatedDependenciesDeepDive) {
+      result.dependenciesDeepDive = this.generatedDependenciesDeepDive;
+    }
+    return result;
+  }
 
 }
 
@@ -267,19 +237,20 @@ export const createDashboard = (config: DashboardConfig): DashboardBuilder => {
  * Create a standalone API Traffic Deep Dive dashboard
  */
 export const createApiTrafficDeepDiveDashboard = (config: DashboardConfig): dashboard.Dashboard => {
+  const baseUid = config.uids?.main || config.uid || `${config.serviceName}-api-traffic-deep-dive`;
   const builder = DashboardBuilder.create({
     ...config,
     dashboardTitle: config.dashboardTitle || 'API Traffic Deep Dive',
     uids: {
       ...config.uids,
-      main: config.uids?.main || config.uid || `${config.serviceName}-api-traffic-deep-dive`
+      main: UidFactory.create(baseUid)
     },
     tags: config.tags || ['generated', config.serviceName, 'deep-dive', 'traffic']
   });
 
   return builder
     .withApiTrafficDeepDive({ serviceName: config.serviceName })
-    .build();
+    .build().main;
 };
 
 /**
