@@ -3,7 +3,6 @@ import { toBytesMB } from "../../utils/index.js";
 
 export type DashboardSet = {
   serviceName: string;
-  uids: { main: string; apiDeepDive?: string; dependenciesDeepDive?: string };
   build: () => { main: any; apiDeepDive?: any; dependenciesDeepDive?: any };
 };
 
@@ -11,16 +10,10 @@ const serviceName = 'express-demo-server';
 
 export const dashboards: DashboardSet = {
   serviceName,
-  uids: {
-    main: 'service-monitoring',
-    apiDeepDive: `${serviceName}-api-deep-dive`,
-    dependenciesDeepDive: `${serviceName}-deps-deep-dive` // Shortened to fit Grafana's 40 char UID limit
-  },
   build: () => {
     const builder = DashboardBuilder.create({
       dashboardTitle: 'Service Monitoring Dashboard',
       serviceName,
-      uids: { main: 'service-monitoring' },
       tags: ['generated', serviceName],
       refresh: '30s',
       timeRange: { from: 'now-1h', to: 'now' }

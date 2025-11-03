@@ -40,8 +40,8 @@ export class DashboardBuilder {
 
   private constructor(config: DashboardConfig) {
     this.initialServiceName = config.serviceName;
-    const baseUid = config.uids?.main || config.uid || `${config.serviceName}-dashboard`;
-    const mainUid = UidFactory.create(baseUid);
+    // Infer UID from serviceName using UidFactory
+    const mainUid = config.uids?.main || config.uid || UidFactory.main(config.serviceName);
     this.grafanaBuilder = new dashboard.DashboardBuilder(`${config.dashboardTitle} - ${config.serviceName}`)
       .uid(mainUid)
       .tags(config.tags || ["generated", config.serviceName])
@@ -190,22 +190,20 @@ export class DashboardBuilder {
     const svc = this.initialServiceName ?? '';
     if (svc) {
       if (this.shouldGenerateApiDeepDive && !this.generatedApiDeepDive) {
-        const apiUid = this.apiDeepDiveUid ?? UidFactory.apiDeepDive(svc);
         const apiDeepDiveBuilder = DashboardBuilder.create({
           dashboardTitle: 'API Deep Dive',
           serviceName: svc,
-          uid: apiUid,
+          uids: { main: this.apiDeepDiveUid ?? UidFactory.apiDeepDive(svc) },
           tags: ['generated', svc, 'deep-dive', 'api']
         });
         this.generatedApiDeepDive = apiDeepDiveBuilder.withApiDeepDive({ serviceName: svc }).build().main;
         this.shouldGenerateApiDeepDive = false;
       }
       if (this.shouldGenerateDependenciesDeepDive && !this.generatedDependenciesDeepDive) {
-        const depsUid = this.depsDeepDiveUid ?? UidFactory.dependenciesDeepDive(svc);
         const depsDeepDiveBuilder = DashboardBuilder.create({
           dashboardTitle: 'Dependencies Deep Dive',
           serviceName: svc,
-          uid: depsUid,
+          uids: { main: this.depsDeepDiveUid ?? UidFactory.dependenciesDeepDive(svc) },
           tags: ['generated', svc, 'deep-dive', 'dependencies']
         });
         this.generatedDependenciesDeepDive = depsDeepDiveBuilder.withDependenciesDeepDive({ serviceName: svc }).build().main;
