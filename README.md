@@ -35,8 +35,7 @@ Multiple dashboards:
     "timeRange": { "from": "now-1h", "to": "now" },
     "uids": {
       "main": "service-monitoring",
-      "apiDeepDive": "express-demo-server-api-deep-dive",
-      "dependenciesDeepDive": "express-demo-server-dependencies-deep-dive"
+      "apiDeepDive": "express-demo-server-api-deep-dive"
     }
   }
 ]
@@ -52,10 +51,9 @@ Environment (optional):
 - DASHBOARD_TIME_TO (default "now")
 - DASHBOARDS_CONFIG (path to JSON array; overrides single-dashboard envs)
 
-Outputs three files under out/:
+Outputs files under out/:
 - Main dashboard: <DASHBOARD_UID>.json
-- API Deep Dive: <SERVICE_NAME>-api-deep-dive.json
-- Dependencies Deep Dive: <SERVICE_NAME>-dependencies-deep-dive.json
+- API Deep Dive: <SERVICE_NAME>-api-deep-dive.json (includes both API Traffic and Dependencies sections)
 
 ## Upload dashboards to Grafana
 

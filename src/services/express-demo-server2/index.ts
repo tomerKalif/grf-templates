@@ -1,10 +1,6 @@
 import {  DashboardBuilder } from "../../templates/dashboard.js";
 import { toBytesMB } from "../../utils/index.js";
-
-export type DashboardSet = {
-  serviceName: string;
-  build: () => { main: any};
-};
+import type { DashboardSet } from "../index.js";
 
 const serviceName = 'express-demo-server-2';
 

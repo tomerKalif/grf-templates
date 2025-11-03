@@ -224,7 +224,7 @@ const token = defaultToken;
   const dashboardsToUpload = [
     { name: "main", dashboard: built.main },
     ...(built.apiDeepDive ? [{ name: "API Deep Dive", dashboard: built.apiDeepDive }] : []),
-    ...(built.dependenciesDeepDive ? [{ name: "Dependencies Deep Dive", dashboard: built.dependenciesDeepDive }] : [])
+    ...(built.graphqlDeepDive ? [{ name: "GraphQL Deep Dive", dashboard: built.graphqlDeepDive }] : [])
   ];
 
   console.log(chalk.yellow(`Found ${dashboardsToUpload.length} dashboard(s) to upload`));
@@ -334,7 +334,7 @@ async function uploadAllServicesDashboards(): Promise<void> {
       const dashboardsToUpload = [
         { name: "main", dashboard: built.main },
         ...(built.apiDeepDive ? [{ name: "API Deep Dive", dashboard: built.apiDeepDive }] : []),
-        ...(built.dependenciesDeepDive ? [{ name: "Dependencies Deep Dive", dashboard: built.dependenciesDeepDive }] : [])
+        ...(built.graphqlDeepDive ? [{ name: "GraphQL Deep Dive", dashboard: built.graphqlDeepDive }] : [])
       ];
 
       console.log(chalk.dim(`  Building ${dashboardsToUpload.length} dashboard(s)...`));

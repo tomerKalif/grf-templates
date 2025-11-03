@@ -1,10 +1,6 @@
 import {  DashboardBuilder } from "../../templates/dashboard.js";
 import { toBytesMB } from "../../utils/index.js";
-
-export type DashboardSet = {
-  serviceName: string;
-  build: () => { main: any; apiDeepDive?: any; dependenciesDeepDive?: any };
-};
+import type { DashboardSet } from "../index.js";
 
 const serviceName = 'express-demo-server';
 
@@ -27,6 +23,10 @@ export const dashboards: DashboardSet = {
         memoryThresholds: { yellow: toBytesMB(300), red: toBytesMB(800) },
         handlesThresholds: { yellow: 500, red: 2000 },
         requestsThresholds: { yellow: 25, red: 100 }
+      }).withGraphQLMetrics({
+        successRateThresholds: { yellow: 95, red: 90 },
+        latencyThresholds: { red: 0.5 },
+        errorsThresholds: { yellow: 5, red: 10 }
       });
 
     return builder.build();

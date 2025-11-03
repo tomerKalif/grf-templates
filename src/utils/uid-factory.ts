@@ -80,5 +80,12 @@ export class UidFactory {
   static dependenciesDeepDive(serviceName: string, instanceId?: string): string {
     return UidFactory.create(`${serviceName}-deps-deep-dive`, instanceId);
   }
+
+  /**
+   * Create UID for GraphQL dashboard
+   */
+  static graphqlDeepDive(serviceName: string, instanceId?: string): string {
+    return UidFactory.create(`${serviceName}-graphql`, instanceId);
+  }
 }
 

@@ -7,7 +7,6 @@ export interface DashboardConfig {
   uids?: {
     main?: string;
     apiDeepDive?: string;
-    dependenciesDeepDive?: string;
   };
   tags?: string[];
   refresh?: string;
@@ -25,6 +24,21 @@ export interface ApiMetricsConfig {
     red: number;
   };
   durationThresholds?: {
+    red: number;
+  };
+}
+
+export interface GraphQLMetricsConfig {
+  serviceName?: string;
+  successRateThresholds?: {
+    yellow: number;
+    red: number;
+  };
+  latencyThresholds?: {
+    red: number;
+  };
+  errorsThresholds?: {
+    yellow: number;
     red: number;
   };
 }
