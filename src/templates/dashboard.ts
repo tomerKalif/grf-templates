@@ -17,32 +17,17 @@ export class DashboardBuilder {
   private grafanaBuilder: dashboard.DashboardBuilder;
   private readonly initialServiceName?: string; // Used for defaults and linking
 
-  // Deep-dive generation controls
-  private shouldGenerateApiDeepDive: boolean = false;
-  private shouldGenerateGraphQLDeepDive: boolean = false;
-  private apiDeepDiveUid?: string;
-  private graphqlDeepDiveUid?: string;
-
   // Generated deep-dive dashboards (computed once)
   private generatedApiDeepDive?: dashboard.Dashboard;
   private generatedGraphQLDeepDive?: dashboard.Dashboard;
 
   // UI state for dashboard list panel
   private deepDiveListPanel?: dashlist.PanelBuilder;
-  private deepDivesAppended: boolean = false;
-
-  /**
-   * @deprecated Use UidFactory.create() instead
-   * Ensures UID is within Grafana's 40 character limit
-   */
-  static truncateUid(uid: string, _maxLength: number = 40): string {
-    return UidFactory.create(uid);
-  }
 
   private constructor(config: DashboardConfig) {
     this.initialServiceName = config.serviceName;
     // Infer UID from serviceName using UidFactory
-    const mainUid = config.uids?.main || config.uid || UidFactory.main(config.serviceName);
+    const mainUid = UidFactory.main(config.serviceName);
     this.grafanaBuilder = new dashboard.DashboardBuilder(`${config.dashboardTitle} - ${config.serviceName}`)
       .uid(mainUid)
       .tags(config.tags || ["generated", config.serviceName])
@@ -90,11 +75,6 @@ export class DashboardBuilder {
 
     // Auto-create deep dive dashboard and list it
     const apiDeepDiveUid = UidFactory.apiDeepDive(svc);
-    // Set generation flag only once to avoid double usage
-    if (!this.shouldGenerateApiDeepDive && !this.generatedApiDeepDive) {
-      this.shouldGenerateApiDeepDive = true;
-      this.apiDeepDiveUid = apiDeepDiveUid;
-    }
     this.withDeepDiveDashboardList([
       { uid: apiDeepDiveUid, title: 'API Deep Dive' }
     ]);
@@ -129,10 +109,6 @@ export class DashboardBuilder {
     
     // Auto-create GraphQL deep dive dashboard and add it to the list
     const graphqlDeepDiveUid = UidFactory.graphqlDeepDive(svc);
-    if (!this.shouldGenerateGraphQLDeepDive && !this.generatedGraphQLDeepDive) {
-      this.shouldGenerateGraphQLDeepDive = true;
-      this.graphqlDeepDiveUid = graphqlDeepDiveUid;
-    }
     this.withDeepDiveDashboardList([
       { uid: graphqlDeepDiveUid, title: 'GraphQL Deep Dive' }
     ]);
@@ -204,12 +180,12 @@ export class DashboardBuilder {
   }
 
   private appendDeepDivesRowIfAny(): void {
-    if (this.deepDivesAppended) return;
     if (this.deepDiveListPanel) {
       this.grafanaBuilder = this.grafanaBuilder
         .withRow(new dashboard.RowBuilder('Deep Dives'))
         .withPanel(this.deepDiveListPanel.span(24).height(6));
-      this.deepDivesAppended = true;
+      // Clear the panel to prevent re-appending
+      delete this.deepDiveListPanel;
     }
   }
 
@@ -217,30 +193,29 @@ export class DashboardBuilder {
    * Builds and returns all dashboards including main and deep dives
    */
   build(): { main: dashboard.Dashboard; apiDeepDive?: dashboard.Dashboard; graphqlDeepDive?: dashboard.Dashboard } {
-    this.appendDeepDivesRowIfAny();
-    // Inline generation of deep-dive dashboards if requested by withApiMetrics
+    // Inline generation of deep-dive dashboards if requested by withApiMetrics/withGraphQLMetrics
+    // Check before appendDeepDivesRowIfAny() which clears deepDiveListPanel
     const svc = this.initialServiceName ?? '';
-    if (svc) {
-      if (this.shouldGenerateApiDeepDive && !this.generatedApiDeepDive) {
+    if (svc && this.deepDiveListPanel) {
+      // Generate API deep dive if not already generated (withApiMetrics calls withDeepDiveDashboardList)
+      if (!this.generatedApiDeepDive) {
         const apiDeepDiveBuilder = DashboardBuilder.create({
           dashboardTitle: 'API Deep Dive',
           serviceName: svc,
-          uids: { main: this.apiDeepDiveUid ?? UidFactory.apiDeepDive(svc) },
           tags: ['generated', svc, 'deep-dive', 'api']
         });
         this.generatedApiDeepDive = apiDeepDiveBuilder.withApiDeepDive({ serviceName: svc }).build().main;
-        this.shouldGenerateApiDeepDive = false;
       }
-      if (this.shouldGenerateGraphQLDeepDive && !this.generatedGraphQLDeepDive) {
+      // Generate GraphQL deep dive if not already generated (withGraphQLMetrics calls withDeepDiveDashboardList)
+      if (!this.generatedGraphQLDeepDive) {
         this.generatedGraphQLDeepDive = createGraphQLDashboard({
           dashboardTitle: 'GraphQL',
           serviceName: svc,
-          uids: { main: this.graphqlDeepDiveUid ?? UidFactory.graphqlDeepDive(svc) },
           tags: ['generated', svc, 'deep-dive', 'graphql']
         });
-        this.shouldGenerateGraphQLDeepDive = false;
       }
     }
+    this.appendDeepDivesRowIfAny();
     const main = this.grafanaBuilder.build();
     
     const result: { main: dashboard.Dashboard; apiDeepDive?: dashboard.Dashboard; graphqlDeepDive?: dashboard.Dashboard } = { main };
@@ -267,14 +242,9 @@ export const createDashboard = (config: DashboardConfig): DashboardBuilder => {
  * Create a standalone API Traffic Deep Dive dashboard
  */
 export const createApiTrafficDeepDiveDashboard = (config: DashboardConfig): dashboard.Dashboard => {
-  const baseUid = config.uids?.main || config.uid || `${config.serviceName}-api-traffic-deep-dive`;
   const builder = DashboardBuilder.create({
     ...config,
     dashboardTitle: config.dashboardTitle || 'API Traffic Deep Dive',
-    uids: {
-      ...config.uids,
-      main: UidFactory.create(baseUid)
-    },
     tags: config.tags || ['generated', config.serviceName, 'deep-dive', 'traffic']
   });
 
