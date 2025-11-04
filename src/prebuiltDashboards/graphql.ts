@@ -1,7 +1,9 @@
 import { prometheusDatasource } from '../templates/datasources.js';
 
+
+
 export function createGraphQLDashboard(datasourceUid: string = prometheusDatasource.uid, tags: string[] = [], serviceName?: string) {
-  return {
+  const dashboard = {
   "__inputs": [
     {
       "name": "DS_PROMETHEUS_CENTRALIZED",
@@ -132,7 +134,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": true,
-          "expr": "(1-(sum(graphql_envelop_error_result{ pod_container_name=\"$serviceName\"})/sum(graphql_envelop_request{ pod_container_name=\"$serviceName\"})))*100",
+          "expr": "(1-(sum(graphql_envelop_error_result{ pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"})/sum(graphql_envelop_request{ pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"})))*100",
           "instant": false,
           "interval": "",
           "legendFormat": "",
@@ -189,7 +191,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": true,
-          "expr": "sum(graphql_envelop_error_result{ operationType=\"query\", pod_container_name=\"$serviceName\"})",
+          "expr": "sum(graphql_envelop_error_result{ operationType=\"query\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"})",
           "instant": false,
           "interval": "",
           "legendFormat": "",
@@ -259,7 +261,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": false,
-          "expr": "sum(graphql_envelop_error_result{ operationType=\"query\", pod_container_name=\"$serviceName\"}) by (operationName)",
+          "expr": "sum(graphql_envelop_error_result{ operationType=\"query\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}) by (operationName)",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -330,7 +332,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": false,
-          "expr": "count(graphql_envelop_error_result{ operationType=\"mutation\", pod_container_name=\"$serviceName\"})",
+          "expr": "count(graphql_envelop_error_result{ operationType=\"mutation\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"})",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -396,7 +398,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": false,
-          "expr": "sum(graphql_envelop_error_result{ operationType=\"mutation\", pod_container_name=\"$serviceName\"}) by (operationName)",
+          "expr": "sum(graphql_envelop_error_result{ operationType=\"mutation\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}) by (operationName)",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -485,7 +487,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.5, sum(rate(graphql_envelop_request_duration_bucket{ pod_container_name=\"$serviceName\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.5, sum(rate(graphql_envelop_request_duration_bucket{ pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[5m])) by (le))",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -545,7 +547,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": false,
-          "expr": "sum(rate(graphql_envelop_request_time_summary_sum{ pod_container_name=\"$serviceName\"}[5m]))/sum(rate(graphql_envelop_request_time_summary_count{ pod_container_name=\"$serviceName\"}[5m]))",
+          "expr": "sum(rate(graphql_envelop_request_time_summary_sum{ pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[5m]))/sum(rate(graphql_envelop_request_time_summary_count{ pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[5m]))",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -608,7 +610,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(graphql_envelop_request_duration_bucket{ operationType=\"query\", pod_container_name=\"$serviceName\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(graphql_envelop_request_duration_bucket{ operationType=\"query\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[5m])) by (le))",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -671,7 +673,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.9, sum(rate(graphql_envelop_request_duration_bucket{ operationType=\"query\", pod_container_name=\"$serviceName\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.9, sum(rate(graphql_envelop_request_duration_bucket{ operationType=\"query\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[5m])) by (le))",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -734,7 +736,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.5, sum(rate(graphql_envelop_request_duration_bucket{ operationType=\"query\", pod_container_name=\"$serviceName\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.5, sum(rate(graphql_envelop_request_duration_bucket{ operationType=\"query\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[5m])) by (le))",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -797,7 +799,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.95, sum(rate(graphql_envelop_request_duration_bucket{ operationType=\"mutation\", pod_container_name=\"$serviceName\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(graphql_envelop_request_duration_bucket{ operationType=\"mutation\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[5m])) by (le))",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -860,7 +862,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.9, sum(rate(graphql_envelop_request_duration_bucket{ operationType=\"mutation\", pod_container_name=\"$serviceName\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.9, sum(rate(graphql_envelop_request_duration_bucket{ operationType=\"mutation\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[5m])) by (le))",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -923,7 +925,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": true,
-          "expr": "histogram_quantile(0.5, sum(rate(graphql_envelop_request_duration_bucket{ operationType=\"mutation\", pod_container_name=\"$serviceName\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.5, sum(rate(graphql_envelop_request_duration_bucket{ operationType=\"mutation\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[5m])) by (le))",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -993,7 +995,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": false,
-          "expr": "round((sum(increase(graphql_envelop_request_duration_bucket{ le=\"2.5\", operationType=\"query\", pod_container_name=\"$serviceName\"}[$__range])) by (operationName)) - (sum(increase(graphql_envelop_request_duration_bucket{ le=\"1\", operationType=\"query\", pod_container_name=\"$serviceName\"}[$__range])) by (operationName)))",
+          "expr": "round((sum(increase(graphql_envelop_request_duration_bucket{ le=\"2.5\", operationType=\"query\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[$__range])) by (operationName)) - (sum(increase(graphql_envelop_request_duration_bucket{ le=\"1\", operationType=\"query\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[$__range])) by (operationName)))",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -1076,7 +1078,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": false,
-          "expr": "(sum(rate(graphql_envelop_request_duration_bucket{ le=\"0.25\", pod_container_name=\"$serviceName\"}[$__range]))+sum(rate(graphql_envelop_request_duration_bucket{ le=\"1\", pod_container_name=\"$serviceName\"}[$__range])))/2/sum(rate(graphql_envelop_request_duration_count{ pod_container_name=\"$serviceName\"}[$__range]))",
+          "expr": "(sum(rate(graphql_envelop_request_duration_bucket{ le=\"0.25\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[$__range]))+sum(rate(graphql_envelop_request_duration_bucket{ le=\"1\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[$__range])))/2/sum(rate(graphql_envelop_request_duration_count{ pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[$__range]))",
           "instant": true,
           "interval": "",
           "legendFormat": "",
@@ -1148,7 +1150,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": false,
-          "expr": "round((sum(increase(graphql_envelop_request_duration_bucket{ le=\"2.5\", operationType=\"mutation\", pod_container_name=\"$serviceName\"}[$__range])) by (operationName)) - (sum(increase(graphql_envelop_request_duration_bucket{ le=\"1\", operationType=\"mutation\", pod_container_name=\"$serviceName\"}[$__range])) by (operationName)))",
+          "expr": "round((sum(increase(graphql_envelop_request_duration_bucket{ le=\"2.5\", operationType=\"mutation\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[$__range])) by (operationName)) - (sum(increase(graphql_envelop_request_duration_bucket{ le=\"1\", operationType=\"mutation\", pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}[$__range])) by (operationName)))",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -1251,7 +1253,7 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
             "uid": datasourceUid
           },
           "exemplar": false,
-          "expr": "sum(graphql_envelop_deprecated_field{ pod_container_name=\"$serviceName\"}) by (fieldName)",
+          "expr": "sum(graphql_envelop_deprecated_field{ pod_container_name=\"$serviceName\", cluster_name=\"$cluster_name\"}) by (fieldName)",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -1333,6 +1335,25 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
         "queryValue": "",
         "skipUrlSync": false,
         "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "description": "Cluster",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Cluster",
+        "multi": true,
+        "name": "cluster_name",
+        "options": [],
+        "query": "",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom",
+        "allValue": ".*"
       }
     ]
   },
@@ -1349,6 +1370,8 @@ export function createGraphQLDashboard(datasourceUid: string = prometheusDatasou
   "gnetId": 19864,
   "description": "GraphQL dashboard based on the Envelop wrapper by The Guild\r\n👉 https://the-guild.dev/graphql/envelop/plugins/use-prometheus"
   };
+
+  return dashboard;
 }
 
 // Export default dashboard with central datasource

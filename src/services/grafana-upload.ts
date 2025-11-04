@@ -1,3 +1,5 @@
+import type * as dashboard from '@grafana/grafana-foundation-sdk/dashboard';
+
 type GrafanaFolder = {
   id: number;
   uid: string;
@@ -64,14 +66,14 @@ export async function ensureFolderId(baseUrl: string, token: string, title: stri
   return created.id;
 }
 
-async function uploadDashboard(baseUrl: string, token: string, folderId: number, dashboard: any): Promise<any> {
+async function uploadDashboard(baseUrl: string, token: string, folderId: number, dashboardData: dashboard.Dashboard): Promise<{ uid?: string }> {
   const url = `${baseUrl}/api/dashboards/db`;
   const res = await grafanaFetch(url, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dashboard, folderId, overwrite: true })
+    body: JSON.stringify({ dashboard: dashboardData, folderId, overwrite: true })
   });
-  return res.json();
+  return (await res.json()) as { uid?: string };
 }
 
 export type UploadConfig = {
@@ -79,7 +81,7 @@ export type UploadConfig = {
   token: string;
   parentFolder: string;
   serviceName: string;
-  dashboard: any;
+  dashboard: dashboard.Dashboard;
 };
 
 export type UploadResult = {
@@ -99,7 +101,11 @@ export async function uploadDashboardToGrafana(config: UploadConfig, parentFolde
     const serviceFolderId = await ensureFolderId(config.baseUrl, config.token, config.serviceName, parentFolderUid);
 
     const result = await uploadDashboard(config.baseUrl, config.token, serviceFolderId, config.dashboard);
-    const uid = result?.uid ?? config.dashboard?.uid;
+    const uid = result?.uid ?? config.dashboard.uid;
+    
+    if (!uid) {
+      throw new Error('Dashboard UID is required but not available');
+    }
 
     return {
       success: true,

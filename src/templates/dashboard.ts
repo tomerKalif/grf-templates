@@ -2,9 +2,8 @@ import * as dashboard from '@grafana/grafana-foundation-sdk/dashboard';
 import type { DashboardConfig, ApiMetricsConfig, GraphQLMetricsConfig } from './types.js';
 import type { NodeJSMetricsConfig } from './NodeJSMetrics/index.js';
 import { requestRateTimeseries, errorRateStat, durationTimeseries, requestRateByMethodTimeseries, requestRateByStatusTimeseries, cpuVsRequestsTimeseries } from './APIMetrics/panels.js';
-import { cpuTimeseries, memoryTimeseries, activeHandlesTimeseries, activeRequestsTimeseries, eventLoopLagTimeseries, cpuPerInstanceTable } from './NodeJSMetrics/Panels.js';
+import { memoryTimeseries, activeHandlesTimeseries, activeRequestsTimeseries, eventLoopLagTimeseries, cpuPerInstanceTable } from './NodeJSMetrics/Panels.js';
 import { successRateStat, queryLatencyStat, queryErrorsStat } from './GraphQL/Panels.js';
-import * as text from '@grafana/grafana-foundation-sdk/text';
 import * as dashlist from '@grafana/grafana-foundation-sdk/dashboardlist';
 import { outgoingRequestRateByTarget, outgoingErrorRateByTarget, outgoingDurationP90ByTarget } from './Dependencies/index.js';
 import { UidFactory } from '../utils/index.js';
@@ -36,7 +35,7 @@ export class DashboardBuilder {
    * @deprecated Use UidFactory.create() instead
    * Ensures UID is within Grafana's 40 character limit
    */
-  static truncateUid(uid: string, maxLength: number = 40): string {
+  static truncateUid(uid: string, _maxLength: number = 40): string {
     return UidFactory.create(uid);
   }
 
@@ -55,6 +54,19 @@ export class DashboardBuilder {
       .timepicker(
         new dashboard.TimePickerBuilder()
           .refreshIntervals(["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"])
+      )
+      .withVariable(
+        new dashboard.CustomVariableBuilder('cluster_name')
+          .label('Cluster')
+          .values('example1,example2')
+          .options([
+            { selected: false, text: 'example1', value: 'example1' },
+            { selected: false, text: 'example2', value: 'example2' }
+          ])
+          .current({ selected: false, text: 'All', value: '$__all' })
+          .multi(true)
+          .includeAll(true)
+          .allValue('.*')
       );
   }
 
@@ -169,6 +181,7 @@ export class DashboardBuilder {
 
   /**
    * Adds a link panel to a separate API Traffic Deep Dive dashboard
+   * @param _items - Kept for API consistency, but we use tags-based filtering instead
    */
   withDeepDiveDashboardList(_items: Array<{ uid: string; title: string }>): this {
     const service = this.initialServiceName ?? '';
@@ -229,6 +242,7 @@ export class DashboardBuilder {
       }
     }
     const main = this.grafanaBuilder.build();
+    
     const result: { main: dashboard.Dashboard; apiDeepDive?: dashboard.Dashboard; graphqlDeepDive?: dashboard.Dashboard } = { main };
     if (this.generatedApiDeepDive) {
       result.apiDeepDive = this.generatedApiDeepDive;
@@ -283,7 +297,6 @@ export const createApiTrafficDeepDiveDashboard = (config: DashboardConfig): dash
  * Create a GraphQL dashboard from prebuilt template
  */
 export const createGraphQLDashboard = (config: DashboardConfig): dashboard.Dashboard => {
-  const baseUid = config.uids?.main || config.uid || `${config.serviceName}-graphql`;
   const tags = config.tags || ['generated', config.serviceName, 'graphql'];
   
   const prebuiltDashboard = createGraphQLDashboardPrebuilt(

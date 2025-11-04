@@ -15,7 +15,7 @@ export const requestRateTimeseries = (serviceName: string): timeseries.PanelBuil
     .unit(units.RequestsPerSecond)
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}"}[10m])) by (route)`)
+        .expr(`sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (route)`)
         .refId("A").legendFormat("{{__auto}}")
     );
 };
@@ -48,7 +48,7 @@ export const errorRateStat = (serviceName: string, thresholds?: { yellow: number
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`(sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}", code=~"5.."}[10m])) / sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}"}[10m]))) * 100`)
+        .expr(`(sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}", code=~"5..", cluster_name="$cluster_name"}[10m])) / sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m]))) * 100`)
         .refId("A").legendFormat("{{__auto}}")
     );
 };
@@ -73,7 +73,7 @@ export const durationTimeseries = (serviceName: string, thresholds?: { red: numb
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`histogram_quantile(0.90, sum(rate(http_request_duration_seconds_bucket{pod_container_name="${serviceName}"}[10m])) by (le, route))`)
+        .expr(`histogram_quantile(0.90, sum(rate(http_request_duration_seconds_bucket{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (le, route))`)
         .refId("A").legendFormat("{{__auto}}")
     );
 };
@@ -86,12 +86,12 @@ export const cpuVsRequestsTimeseries = (serviceName: string): timeseries.PanelBu
     .datasource(prometheusDatasource)
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`irate(process_cpu_user_seconds_total{app_container_name="${serviceName}"}[2m]) * 100`)
+        .expr(`irate(process_cpu_user_seconds_total{app_container_name="${serviceName}", cluster_name="$cluster_name"}[2m]) * 100`)
         .refId("A").legendFormat("CPU %")
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`sum(rate(http_request_duration_seconds_count{app_container_name="${serviceName}"}[10m]))`)
+        .expr(`sum(rate(http_request_duration_seconds_count{app_container_name="${serviceName}", cluster_name="$cluster_name"}[10m]))`)
         .refId("B").legendFormat("RPS")
     );
 };
@@ -104,7 +104,7 @@ export const requestRateByMethodTimeseries = (serviceName: string): timeseries.P
     .unit(units.RequestsPerSecond)
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}"}[10m])) by (method)`)
+        .expr(`sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (method)`)
         .refId("A").legendFormat("{{method}}")
     );
 };
@@ -117,7 +117,7 @@ export const requestRateByStatusTimeseries = (serviceName: string): timeseries.P
     .unit(units.RequestsPerSecond)
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}"}[10m])) by (code)`)
+        .expr(`sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (code)`)
         .refId("A").legendFormat("{{code}}")
     );
 };

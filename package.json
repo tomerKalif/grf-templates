@@ -10,20 +10,27 @@
     "start": "node dist/index.js",
     "start:dev": "tsx src/index.ts",
     "dev": "tsx src/index.ts",
-    "dashboards:build": "tsx src/scripts/generate-dashboards.ts"
+    "dashboards:build": "tsx src/scripts/generate-dashboards.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.18.3",
   "devDependencies": {
+    "@eslint/js": "^9.39.0",
     "@types/node": "^20.12.12",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
     "eslint": "^9.37.0",
+    "eslint-config-prettier": "^10.1.8",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.7.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2"
   },
   "dependencies": {
     "@grafana/grafana-foundation-sdk": "11.6.0-cogv0.0.x.1753977659",

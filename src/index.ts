@@ -16,10 +16,6 @@ function createRl() {
   return createInterface({ input, output });
 }
 
-function askQuestion(rl: ReturnType<typeof createRl>, question: string): Promise<string> {
-  return new Promise((resolve) => rl.question(question, resolve));
-}
-
 function renderHeader(title: string): void {
   const termWidth = typeof output.columns === "number" ? output.columns : 80;
   const innerWidth = Math.max(68, Math.min(termWidth - 4, title.length + 20));
@@ -81,7 +77,7 @@ async function selectFromList(options: string[], title: string): Promise<number 
   let idx = 0;
   let start = 0; // viewport start index
 
-  const termRows = typeof (process.stdout as any).rows === "number" ? (process.stdout as any).rows : 24;
+  const termRows = typeof (process.stdout as { rows?: number }).rows === "number" ? (process.stdout as { rows: number }).rows : 24;
   const headerRows = 8; // approximate rows used by header
   const footerRows = 3; // help + spacing
   const maxVisible = Math.max(8, termRows - headerRows - footerRows);
@@ -161,7 +157,7 @@ async function selectFromList(options: string[], title: string): Promise<number 
   });
 }
 
-async function exportSingleDashboard(rl: ReturnType<typeof createRl>): Promise<void> {
+async function exportSingleDashboard(): Promise<void> {
   const entries = Object.entries(services) as Array<[ServiceName, (typeof services)[ServiceName]]>;
   if (entries.length === 0) {
     console.log("No services available.");
@@ -182,7 +178,7 @@ async function exportSingleDashboard(rl: ReturnType<typeof createRl>): Promise<v
   console.log(`Wrote ${serviceName} main dashboard -> ${defaultPath}`);
 }
 
-async function uploadDashboardToGrafana(rl: ReturnType<typeof createRl>): Promise<void> {
+async function uploadDashboardToGrafana(): Promise<void> {
   const entries = Object.entries(services) as Array<[ServiceName, (typeof services)[ServiceName]]>;
   if (entries.length === 0) {
     console.log(chalk.red("No services available."));
@@ -200,7 +196,6 @@ async function uploadDashboardToGrafana(rl: ReturnType<typeof createRl>): Promis
   // Get Grafana configuration
   const defaultBaseUrl = process.env.GRAFANA_URL || "";
   const defaultToken = process.env.GRAFANA_API_KEY || "";
-  const defaultParentFolder = process.env.GRAFANA_PARENT_FOLDER || "Services";
 
   console.log();
   const baseUrl = defaultBaseUrl
@@ -232,7 +227,7 @@ const token = defaultToken;
 
   // Ensure folders are created sequentially before parallel uploads to avoid race conditions
   // First create the parent folder
-  const parentFolderId = await ensureFolderId(baseUrl, token, parentFolder);
+  await ensureFolderId(baseUrl, token, parentFolder);
   const parentFolderDetails = await findFolderByTitle(baseUrl, token, parentFolder);
   const parentFolderUid = parentFolderDetails?.uid;
 
@@ -313,7 +308,7 @@ async function uploadAllServicesDashboards(): Promise<void> {
   console.log(chalk.yellow("Ensuring parent folder structure..."));
 
   // Ensure parent folder exists once for all services
-  const parentFolderId = await ensureFolderId(baseUrl, token, parentFolder);
+  await ensureFolderId(baseUrl, token, parentFolder);
   const parentFolderDetails = await findFolderByTitle(baseUrl, token, parentFolder);
   const parentFolderUid = parentFolderDetails?.uid;
 
@@ -419,9 +414,9 @@ async function main(): Promise<void> {
     ];
     const picked = await selectFromList(mainOptions, "Select an action");
     if (picked === 0) {
-      await exportSingleDashboard(rl);
+      await exportSingleDashboard();
     } else if (picked === 1) {
-      await uploadDashboardToGrafana(rl);
+      await uploadDashboardToGrafana();
     } else if (picked === 2) {
       await uploadAllServicesDashboards();
     }

@@ -28,7 +28,7 @@ export const cpuTimeseries = (serviceName: string, thresholds?: { yellow: number
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`irate(process_cpu_user_seconds_total{pod_container_name="${serviceName}"}[2m]) * 100`)
+        .expr(`irate(process_cpu_user_seconds_total{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[2m]) * 100`)
         .refId("A")
         .legendFormat("CPU Usage %")
     );
@@ -55,7 +55,7 @@ export const memoryTimeseries = (serviceName: string, thresholds?: { yellow: num
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`process_resident_memory_bytes{pod_container_name="${serviceName}"}`)
+        .expr(`process_resident_memory_bytes{pod_container_name="${serviceName}", cluster_name="$cluster_name"}`)
         .refId("A")
         .legendFormat("Memory Usage")
     );
@@ -82,7 +82,7 @@ export const activeHandlesTimeseries = (serviceName: string, thresholds?: { yell
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`nodejs_active_handles{pod_container_name="${serviceName}"}`)
+        .expr(`nodejs_active_handles{pod_container_name="${serviceName}", cluster_name="$cluster_name"}`)
         .refId("A")
         .legendFormat("Active Handles")
     );
@@ -109,7 +109,7 @@ export const activeRequestsTimeseries = (serviceName: string, thresholds?: { yel
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`nodejs_active_requests{pod_container_name="${serviceName}"}`)
+        .expr(`nodejs_active_requests{pod_container_name="${serviceName}", cluster_name="$cluster_name"}`)
         .refId("A")
         .legendFormat("Active Requests")
     );
@@ -135,7 +135,7 @@ export const eventLoopLagTimeseries = (serviceName: string, thresholds?: { red: 
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`histogram_quantile(0.99, sum(rate(nodejs_eventloop_lag_seconds_bucket{app_container_name="${serviceName}"}[10m])) by (le))`)
+        .expr(`histogram_quantile(0.99, sum(rate(nodejs_eventloop_lag_seconds_bucket{app_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (le))`)
         .refId("A")
         .legendFormat("p99")
     );
@@ -148,7 +148,7 @@ export const cpuPerInstanceTable = (serviceName: string): table.PanelBuilder => 
     .datasource(prometheusDatasource)
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`topk(5, sum by (instance) (irate(process_cpu_user_seconds_total{app_container_name="${serviceName}"}[2m]) * 100))`)
+        .expr(`topk(5, sum by (instance) (irate(process_cpu_user_seconds_total{app_container_name="${serviceName}", cluster_name="$cluster_name"}[2m]) * 100))`)
         .refId("A")
         .legendFormat("{{instance}}")
     );

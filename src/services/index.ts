@@ -1,11 +1,12 @@
+import type * as dashboard from '@grafana/grafana-foundation-sdk/dashboard';
 import { dashboards as expressDemo } from './express-demo-server/index.js';
 import { expressDemoServer2 } from './express-demo-server2/index.js';
 import { graphqlService } from './prebuilt/graphql.js';
 
 export type DashboardBuildResult = {
-  main: any;
-  apiDeepDive?: any;
-  graphqlDeepDive?: any;
+  main: dashboard.Dashboard;
+  apiDeepDive?: dashboard.Dashboard;
+  graphqlDeepDive?: dashboard.Dashboard;
 };
 
 export type DashboardSet = {

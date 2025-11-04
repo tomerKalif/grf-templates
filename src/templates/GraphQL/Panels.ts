@@ -2,7 +2,6 @@ import * as prometheus from '@grafana/grafana-foundation-sdk/prometheus';
 import * as stat from '@grafana/grafana-foundation-sdk/stat';
 import * as units from '@grafana/grafana-foundation-sdk/units';
 import * as dashboard from '@grafana/grafana-foundation-sdk/dashboard';
-import { defaultTimeseries } from '../common.js';
 import { prometheusDatasource } from '../datasources.js';
 
 export const successRateStat = (serviceName: string, thresholds?: { yellow: number; red: number }): stat.PanelBuilder => {
@@ -25,7 +24,7 @@ export const successRateStat = (serviceName: string, thresholds?: { yellow: numb
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`(1-(sum(graphql_envelop_error_result{ pod_container_name="${serviceName}"})/sum(graphql_envelop_request{ pod_container_name="${serviceName}"})))*100`)
+        .expr(`(1-(sum(graphql_envelop_error_result{ pod_container_name="${serviceName}", cluster_name="$cluster_name"})/sum(graphql_envelop_request{ pod_container_name="${serviceName}", cluster_name="$cluster_name"})))*100`)
         .refId('A')
         .legendFormat('{{__auto}}')
     );
@@ -49,7 +48,7 @@ export const queryLatencyStat = (serviceName: string, thresholds?: { red: number
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`histogram_quantile(0.5, sum(rate(graphql_envelop_request_duration_bucket{ pod_container_name="${serviceName}"}[5m])) by (le))`)
+        .expr(`histogram_quantile(0.5, sum(rate(graphql_envelop_request_duration_bucket{ pod_container_name="${serviceName}", cluster_name="$cluster_name"}[5m])) by (le))`)
         .refId('A')
         .legendFormat('{{__auto}}')
     );
@@ -75,7 +74,7 @@ export const queryErrorsStat = (serviceName: string, thresholds?: { yellow: numb
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`sum(graphql_envelop_error_result{ operationType="query", pod_container_name="${serviceName}"})`)
+        .expr(`sum(graphql_envelop_error_result{ operationType="query", pod_container_name="${serviceName}", cluster_name="$cluster_name"})`)
         .refId('A')
         .legendFormat('{{__auto}}')
     );

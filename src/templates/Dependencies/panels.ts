@@ -16,7 +16,7 @@ export const outgoingRequestRateByTarget = (serviceName: string): timeseries.Pan
     .unit(units.RequestsPerSecond)
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`sum(rate(http_outgoing_duration_seconds_count{pod_container_name="${serviceName}"}[10m])) by (target)`)
+        .expr(`sum(rate(http_outgoing_duration_seconds_count{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (target)`)
         .refId('A').legendFormat('{{target}}')
     );
 };
@@ -53,7 +53,7 @@ export const outgoingErrorRateByTarget = (
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`(sum(rate(http_outgoing_duration_seconds_count{pod_container_name="${serviceName}", code=~"5.."}[10m])) by (target) / sum(rate(http_outgoing_duration_seconds_count{pod_container_name="${serviceName}"}[10m])) by (target)) * 100`)
+        .expr(`(sum(rate(http_outgoing_duration_seconds_count{pod_container_name="${serviceName}", code=~"5..", cluster_name="$cluster_name"}[10m])) by (target) / sum(rate(http_outgoing_duration_seconds_count{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (target)) * 100`)
         .refId('A').legendFormat('{{target}}')
     );
 };
@@ -82,7 +82,7 @@ export const outgoingDurationP90ByTarget = (
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`histogram_quantile(0.90, sum(rate(http_outgoing_duration_seconds_bucket{pod_container_name="${serviceName}"}[10m])) by (le, target))`)
+        .expr(`histogram_quantile(0.90, sum(rate(http_outgoing_duration_seconds_bucket{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (le, target))`)
         .refId('A').legendFormat('{{target}}')
     );
 };
