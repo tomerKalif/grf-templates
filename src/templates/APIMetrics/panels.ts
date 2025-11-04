@@ -5,16 +5,17 @@ import * as stat from '@grafana/grafana-foundation-sdk/stat';
 import * as units from '@grafana/grafana-foundation-sdk/units';
 import * as common from '@grafana/grafana-foundation-sdk/common';
 import { defaultTimeseries } from '../common.js';
+import { prometheusDatasource } from '../datasources.js';
 
 export const requestRateTimeseries = (serviceName: string): timeseries.PanelBuilder => {
   return defaultTimeseries()
     .title("Request rate")
     .description("Number of requests handled by the service, per second.")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .unit(units.RequestsPerSecond)
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}"}[10m])) by (route)`)
+        .expr(`sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (route)`)
         .refId("A").legendFormat("{{__auto}}")
     );
 };
@@ -23,7 +24,7 @@ export const errorRateStat = (serviceName: string, thresholds?: { yellow: number
   return new stat.PanelBuilder()
     .title("Error rate")
     .description("Percentage of failed requests.")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .unit(units.Percent)
     .thresholds(
       new dashboard.ThresholdsConfigBuilder()
@@ -47,7 +48,7 @@ export const errorRateStat = (serviceName: string, thresholds?: { yellow: number
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`(sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}", code=~"5.."}[10m])) / sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}"}[10m]))) * 100`)
+        .expr(`(sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}", code=~"5..", cluster_name="$cluster_name"}[10m])) / sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m]))) * 100`)
         .refId("A").legendFormat("{{__auto}}")
     );
 };
@@ -56,7 +57,7 @@ export const durationTimeseries = (serviceName: string, thresholds?: { red: numb
   return defaultTimeseries()
     .title("90th percentile of request duration")
     .description("90th percentile of request duration, per second.")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .unit(units.Seconds)
     .thresholds(
       new dashboard.ThresholdsConfigBuilder()
@@ -72,8 +73,26 @@ export const durationTimeseries = (serviceName: string, thresholds?: { red: numb
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`histogram_quantile(0.90, sum(rate(http_request_duration_seconds_bucket{pod_container_name="${serviceName}"}[10m])) by (le, route))`)
+        .expr(`histogram_quantile(0.90, sum(rate(http_request_duration_seconds_bucket{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (le, route))`)
         .refId("A").legendFormat("{{__auto}}")
+    );
+};
+
+// Combined overlay panel for saturation: CPU usage vs total request rate
+export const cpuVsRequestsTimeseries = (serviceName: string): timeseries.PanelBuilder => {
+  return defaultTimeseries()
+    .title("CPU vs Requests (Saturation)")
+    .description("Overlay CPU usage % and total request rate to visualize saturation.")
+    .datasource(prometheusDatasource)
+    .withTarget(
+      new prometheus.DataqueryBuilder()
+        .expr(`irate(process_cpu_user_seconds_total{app_container_name="${serviceName}", cluster_name="$cluster_name"}[2m]) * 100`)
+        .refId("A").legendFormat("CPU %")
+    )
+    .withTarget(
+      new prometheus.DataqueryBuilder()
+        .expr(`sum(rate(http_request_duration_seconds_count{app_container_name="${serviceName}", cluster_name="$cluster_name"}[10m]))`)
+        .refId("B").legendFormat("RPS")
     );
 };
 
@@ -81,11 +100,11 @@ export const requestRateByMethodTimeseries = (serviceName: string): timeseries.P
   return defaultTimeseries()
     .title("Request rate by method")
     .description("Requests per second grouped by HTTP method.")
-    .datasource({ uid: "prometheus", type: "prometheus" })
+    .datasource(prometheusDatasource)
     .unit(units.RequestsPerSecond)
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}"}[10m])) by (method)`)
+        .expr(`sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (method)`)
         .refId("A").legendFormat("{{method}}")
     );
 };
@@ -98,7 +117,7 @@ export const requestRateByStatusTimeseries = (serviceName: string): timeseries.P
     .unit(units.RequestsPerSecond)
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}"}[10m])) by (code)`)
+        .expr(`sum(rate(http_request_duration_seconds_count{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (code)`)
         .refId("A").legendFormat("{{code}}")
     );
 };

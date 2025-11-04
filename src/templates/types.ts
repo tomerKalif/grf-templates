@@ -1,7 +1,6 @@
 export interface DashboardConfig {
   dashboardTitle: string;
   serviceName: string;
-  uid?: string;
   tags?: string[];
   refresh?: string;
   timeRange?: {
@@ -12,12 +11,27 @@ export interface DashboardConfig {
 }
 
 export interface ApiMetricsConfig {
-  serviceName: string;
+  serviceName?: string;
   errorRateThresholds?: {
     yellow: number;
     red: number;
   };
   durationThresholds?: {
+    red: number;
+  };
+}
+
+export interface GraphQLMetricsConfig {
+  serviceName?: string;
+  successRateThresholds?: {
+    yellow: number;
+    red: number;
+  };
+  latencyThresholds?: {
+    red: number;
+  };
+  errorsThresholds?: {
+    yellow: number;
     red: number;
   };
 }

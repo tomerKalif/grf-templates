@@ -5,17 +5,18 @@ import * as stat from '@grafana/grafana-foundation-sdk/stat';
 import * as units from '@grafana/grafana-foundation-sdk/units';
 import * as common from '@grafana/grafana-foundation-sdk/common';
 import { defaultTimeseries } from '../common.js';
+import { prometheusDatasource } from '../datasources.js';
 
 // Outgoing request rate grouped by target (upstream dependency)
 export const outgoingRequestRateByTarget = (serviceName: string): timeseries.PanelBuilder => {
   return defaultTimeseries()
     .title('Outgoing request rate by target')
     .description('Number of outgoing requests per second grouped by target.')
-    .datasource({ uid: 'prometheus', type: 'prometheus' })
+    .datasource(prometheusDatasource)
     .unit(units.RequestsPerSecond)
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`sum(rate(http_outgoing_duration_seconds_count{pod_container_name="${serviceName}"}[10m])) by (target)`)
+        .expr(`sum(rate(http_outgoing_duration_seconds_count{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (target)`)
         .refId('A').legendFormat('{{target}}')
     );
 };
@@ -28,7 +29,7 @@ export const outgoingErrorRateByTarget = (
   return new stat.PanelBuilder()
     .title('Outgoing error rate by target')
     .description('Percentage of 5xx for outgoing requests grouped by target.')
-    .datasource({ uid: 'prometheus', type: 'prometheus' })
+    .datasource(prometheusDatasource)
     .unit(units.Percent)
     .thresholds(
       new dashboard.ThresholdsConfigBuilder()
@@ -52,7 +53,7 @@ export const outgoingErrorRateByTarget = (
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`(sum(rate(http_outgoing_duration_seconds_count{pod_container_name="${serviceName}", code=~"5.."}[10m])) by (target) / sum(rate(http_outgoing_duration_seconds_count{pod_container_name="${serviceName}"}[10m])) by (target)) * 100`)
+        .expr(`(sum(rate(http_outgoing_duration_seconds_count{pod_container_name="${serviceName}", code=~"5..", cluster_name="$cluster_name"}[10m])) by (target) / sum(rate(http_outgoing_duration_seconds_count{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (target)) * 100`)
         .refId('A').legendFormat('{{target}}')
     );
 };
@@ -65,7 +66,7 @@ export const outgoingDurationP90ByTarget = (
   return defaultTimeseries()
     .title('Outgoing P90 duration by target')
     .description('90th percentile of outgoing request duration grouped by target.')
-    .datasource({ uid: 'prometheus', type: 'prometheus' })
+    .datasource(prometheusDatasource)
     .unit(units.Seconds)
     .thresholds(
       new dashboard.ThresholdsConfigBuilder()
@@ -81,7 +82,7 @@ export const outgoingDurationP90ByTarget = (
     )
     .withTarget(
       new prometheus.DataqueryBuilder()
-        .expr(`histogram_quantile(0.90, sum(rate(http_outgoing_duration_seconds_bucket{pod_container_name="${serviceName}"}[10m])) by (le, target))`)
+        .expr(`histogram_quantile(0.90, sum(rate(http_outgoing_duration_seconds_bucket{pod_container_name="${serviceName}", cluster_name="$cluster_name"}[10m])) by (le, target))`)
         .refId('A').legendFormat('{{target}}')
     );
 };

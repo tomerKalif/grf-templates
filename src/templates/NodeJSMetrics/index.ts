@@ -3,7 +3,7 @@ export { cpuTimeseries, memoryTimeseries, activeHandlesTimeseries, activeRequest
 
 // Export types
 export interface NodeJSMetricsConfig {
-  serviceName: string;
+  serviceName?: string;
   cpuThresholds?: {
     yellow: number;
     red: number;
